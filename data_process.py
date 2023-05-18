@@ -28,7 +28,7 @@ from typing import Tuple, Dict, List, Callable, Any
 
 def read_file(path : str) -> pd.DataFrame:
     
-    """function to read a fasta file and return a pandas.DataFrame contains colums ['Description', 'Sequence']
+    """function to read a fasta file and return a pandas.DataFrame with ['Description', 'Sequence'] as columns
     """
     
     sequences = []
@@ -42,7 +42,7 @@ def read_file(path : str) -> pd.DataFrame:
 
 def read_files_to_one(dir_path : str):
     
-    """read all fasta files on a directory and return a pd.DataFrame
+    """reads all fasta files in a directory and returns a pd.DataFrame
     """
     
     files_n = os.listdir(dir_path)
@@ -50,7 +50,7 @@ def read_files_to_one(dir_path : str):
     return all_df
 
 
-def concat_data(data_list : List[pd.DataFrame]) -> Tuple[pd.DataFrame, Dict] :
+def concat_data(data_list : List[pd.DataFrame]) -> Tuple[pd.DataFrame, Dict] : # if you don't want to wrute pandas function manually
     
     """concat some dataframes to one. all dataframes must conains named colums 'Class' and 'Sequence'
     
@@ -105,7 +105,7 @@ def encoding(mode : str ,
              vocab : Dict[str, int], 
              k : int = 3
              ) -> Callable:
-    """Return an encoding function between label_encoding or kmer_encoding
+    """Returns an encoding function between label_encoding and kmer_encoding
 
     Args:
         mode (str): label_encoder or kmer_encoder
@@ -118,10 +118,10 @@ def encoding(mode : str ,
     
     def bin_encoding(seq : str) -> List[int]:
         
-        """function to encode a sequence text using label encoder method
+        """function to encode a textual sequence using label encoder
 
         Returns:
-            np.array: array containing numerical transformation of a sequence text
+            np.array: array containing numerical transformation of a str sequence 
         """
         return [vocab[c] for c in list(seq)]
     
@@ -152,7 +152,7 @@ def split_data(data : pd.DataFrame,
                train_size : float,
                seed : int) -> Tuple[List, List, List]:
     
-    """split data to a train, validation and test 
+    """split data to train, validation and test samples
 
     Returns:
         List: list contains tuples (label, sequence str)
@@ -167,7 +167,7 @@ def split_data(data : pd.DataFrame,
 
 class TextDataset(Dataset):
     
-    """Class to convert a data list of tuples to torch.utils.data.Dataset type. torch.utils.data.Dataset is the correct data type to pass into DataLoaders
+    """Class to convert a data_list of tuples to torch.utils.data.Dataset type. torch.utils.data.Dataset is the correct data type to pass into DataLoaders
     and it's very easy to configure when your data is a list of tuples !
     There is a general way to manually define a torch.utils.data.Dataset object when using text data
     """
@@ -200,9 +200,9 @@ class TextDataset(Dataset):
 
 ## collate function for dataloaders
 
-def get_collate_fn() -> Callable: #batch : Tuple[List[torch.tensor], List[torch.tensor]]
+def get_collate_fn() -> Callable: 
     
-    def collate_fn(batch) -> Tuple[Any, torch.tensor]:
+    def collate_fn(batch) -> Tuple[Any, torch.tensor, torch.tensor]:
         sequences, labels = zip(*batch)
         
         # Sort sequences by length in descending order, required when you want to use pack_padded with gpu
@@ -220,17 +220,12 @@ def get_collate_fn() -> Callable: #batch : Tuple[List[torch.tensor], List[torch.
         return padded_sequences, torch.tensor(labels), torch.tensor(sequence_lengths)
     return collate_fn
 
-
-
-"""
-Function to get corret weights if you want to use WeightedRandomSampler 
-"""
+## 
 
 def get_weigths_for_wsampler(data_list : List[Tuple[int, str]]) -> List[float]:
     
-    """function that returns weighted indices for use in a WeightedRandomSampler.
-    It groups the indices belonging to each class and assigns a weighting according
-    to the inverse of the frequency of each class in the training data set passed as an argument.
+    """this function makes it possible to allocate weights to the indexes
+    according to their label for use in a WeightedRandomSampler.
 
     Returns:
         list of weights for each data index in data_list
@@ -242,7 +237,7 @@ def get_weigths_for_wsampler(data_list : List[Tuple[int, str]]) -> List[float]:
             class_indices[label] = []
         class_indices[label].append(i)
         
-    # assigns a weight based on class freaquency in data passed
+    # assigns a weight based on class frequency in data passed
     class_weights = {}
     for label, indices in class_indices.items():
         class_weights[label] = 1.0 / len(indices)
