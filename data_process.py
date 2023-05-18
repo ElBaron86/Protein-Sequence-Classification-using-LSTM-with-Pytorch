@@ -1,5 +1,5 @@
 """
-This file contains all necessary functions from preprocessing to final processing data,
+This file contains all necessary process and pre-process functions,
 using these functions allows to work faster with protein sequences
 """
 
