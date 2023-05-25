@@ -33,7 +33,7 @@ def train(model : torch.nn.Module,
         model : model instancied based from models.py file
         classification_task : 'multiclass' or 'binary', default 'multiclass' 
         optimizer : default Adam optimizer
-        loss_fn : 
+        loss_fn : loss
         device : 'cuda' or 'cpu', default = 'cpu'
         train_loader : DataLoader who loads train dataset with a specific collate funcion
         valid_loader : DataLoader who loads validation dataset with a specific collate funcion
@@ -41,7 +41,7 @@ def train(model : torch.nn.Module,
         n_epochs : number of epochs to train
         patience : number of epochs to wait if valid loss doesn't improve
         save_dir : directory to save model state_dict
-        save_name : name of model.state_dict to save in save_path    
+        save_name : name of model.state_dict to save     
     """
     
     if optimizer is None:
@@ -65,17 +65,14 @@ def train(model : torch.nn.Module,
     
     start_time = time.time()
     
-    # params for early stopping
-    
+    # for early stopping
     best_loss = np.inf
     best_epoch = 0
 
-    # train with early stopping method, a good way to train a model without saving an outfitted state_dict !!!
-    
     for epoch in range(n_epochs):
             
-        # train metrics
-        l, a = 0, 0
+        # train epoch metrics
+        l, a = 0, 0 # loss and accuracy
         
         model.train()
         
@@ -119,7 +116,7 @@ def train(model : torch.nn.Module,
         with torch.no_grad():
             ll, aa = 0, 0
             for sequences, labels, lengths in tqdm(valid_loader):
-                labels = labels.to(device).long()               # labels must be in torch.Long type
+                labels = labels.to(device).long()               
                 sequences = sequences.to(device)
                 
                 # Forward pass
@@ -136,7 +133,7 @@ def train(model : torch.nn.Module,
         
         ################### check if metrics are better : Early stopping ########################
         
-        if results['valid_loss'][-1] < best_loss: # if eval loss is better, save the state dict else whait for max patience epochs
+        if results['valid_loss'][-1] < best_loss: 
             best_loss = results['valid_loss'][-1]
             best_epoch = epoch
             if save_dir is not None:
@@ -148,11 +145,12 @@ def train(model : torch.nn.Module,
                 print(f"Early stopping at epoch : {epoch+1}")
                 break
         
-        print("*"*50)
-        print(f"Epoch : {epoch+1}")
-        print(f"Train --> loss : {results['train_loss'][-1]} | acc {results['train_acc'][-1]}")
-        print(f"Evaluation --> loss {results['valid_loss'][-1]} | acc {results['valid_acc'][-1]}")
-        print("*"*50)
+        if epoch %5 == 0:
+            print("*"*50)
+            print(f"Epoch : {epoch+1}")
+            print(f"Train --> loss : {results['train_loss'][-1]} | acc {results['train_acc'][-1]}")
+            print(f"Evaluation --> loss {results['valid_loss'][-1]} | acc {results['valid_acc'][-1]}")
+            print("*"*50)
         
     # running time
     end_time = time.time()
@@ -165,9 +163,9 @@ def train(model : torch.nn.Module,
     if save_dir is not None:
         
         # save metrics to visualize training curves
-        np.save(save_dir+"/"+save_name+"_train_losse", np.array(results["train_loss"]))
+        np.save(save_dir+"/"+save_name+"_train_loss", np.array(results["train_loss"]))
         np.save(save_dir+"/"+save_name+"_train_accuracy", np.array(results["train_acc"]))
-        np.save(save_dir+"/"+save_name+"_valid_losse", np.array(results["valid_loss"]))
+        np.save(save_dir+"/"+save_name+"_valid_loss", np.array(results["valid_loss"]))
         np.save(save_dir+"/"+save_name+"_valid_accuracy", np.array(results["valid_acc"]))
 
     return results

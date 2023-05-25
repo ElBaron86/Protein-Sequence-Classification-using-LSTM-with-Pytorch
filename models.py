@@ -3,55 +3,7 @@ from torch import nn
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 
-# Model1 : 1xBi-LSTM
 
-class LSTMnet(nn.Module):
-    def __init__(self, vocab_size, embedding_size, lstm_dim, hidden_dim, out_dim, drop):
-        super().__init__()
-        
-        # Embedding layer
-        self.embedding = nn.Embedding(num_embeddings=vocab_size, embedding_dim=embedding_size)
-        
-        # LSTM layer
-        self.lstm = nn.LSTM(embedding_size,
-                            lstm_dim,
-                            num_layers=2,
-                            dropout=drop,
-                            batch_first=True,
-                            bidirectional=True)
-        
-        # Fully connected layer for classif
-        self.fc = nn.Sequential(nn.Linear(in_features=lstm_dim*2, out_features=hidden_dim),
-                                nn.BatchNorm1d(hidden_dim),
-                                nn.Sigmoid(),
-                                nn.Linear(in_features=hidden_dim, out_features=out_dim),
-                                nn.BatchNorm1d(out_dim),
-                                nn.Sigmoid())
-        
-    # Forward function
-    def forward(self, seq, seq_len):
-        
-        # first pass into embed layer
-        embed = self.embedding(seq)
-        
-        # pack_pad the sequences is a good way to gate relevant information in padded sequences to train a RNN network 
-        pack_padded = nn.utils.rnn.pack_padded_sequence(input=embed,
-                                                        lengths=seq_len,
-                                                        batch_first=True,
-                                                        enforce_sorted=False) # because sequences are non sorted before
-        # pass into lstm layer
-        lstm_out, (h_n, c_n) = self.lstm(pack_padded)
-        
-        # concatenate into dim 1 outputs of all lstm cells to get more informations
-        h_n = torch.cat((h_n[-2, :, :], h_n[-1, :, :]), dim=1)
-        
-        # pass into fc
-        out = self.fc(h_n)
-        
-        return out
-
-
-    
 ############## Model 1 : 2xBi-LSTM
 
 class LSTMnet2(nn.Module):
@@ -99,15 +51,16 @@ class LSTMnet2(nn.Module):
         pack_padded = nn.utils.rnn.pack_padded_sequence(input=embed,
                                                         lengths=seq_len,
                                                         batch_first=True,
-                                                        enforce_sorted=False) # because sequences are non sorted before
+                                                        enforce_sorted=False) 
         
         # init hidden states to 0 for first lstm
         h1_0 = torch.zeros(self.num_layers*2, seq.size(0), self.lstm1_dim).to(seq.device)
         c1_0 = torch.zeros(self.num_layers*2, seq.size(0), self.lstm1_dim).to(seq.device)
         
         # pass into first lstm
-        #lstm1_out, (h1_n, c1_n) = self.lstm1(embed, (h1_0, c1_0))
-        lstm1_out, (h1_n, c1_n) = self.lstm1(pack_padded, (h1_0, c1_0))#, (h1_0, c1_0))  , (h1_n, c1_n)
+        lstm1_out, (h1_n, c1_n) = self.lstm1(pack_padded, (h1_0, c1_0))
+        
+        # i used the 'output' from the first lstm to get the short term dependencies in the sequences
         
         # init hidden states to 0 for 2nd lstm
         h2_0 = torch.zeros(self.num_layers*2, seq.size(0), self.lstm2_dim).to(seq.device)
@@ -117,11 +70,65 @@ class LSTMnet2(nn.Module):
         lstm_out2, (h2_n, c2_n) = self.lstm2(lstm1_out, (h2_0, c2_0))
         
         
-        # concatenate into dim 1 outputs of all lstm cells to get more informations
+        # concatenate in dimension 1 the outputs of the last lstm layers to get more information
         h_n = torch.cat((h2_n[-2, :, :], h2_n[-1, :, :]), dim=1)
         
         # pass into fc
         out = self.fc(h_n)
         
         return out
+
+
+
+
+############## Model 2 : 1xBi-LSTM
+
+class LSTMnet(nn.Module):
+    def __init__(self, vocab_size, embedding_size, lstm_dim, hidden_dim, out_dim, drop):
+        super().__init__()
+        
+        # Embedding layer
+        self.embedding = nn.Embedding(num_embeddings=vocab_size, embedding_dim=embedding_size)
+        
+        # LSTM layer
+        self.lstm = nn.LSTM(embedding_size,
+                            lstm_dim,
+                            num_layers=2,
+                            dropout=drop,
+                            batch_first=True,
+                            bidirectional=True)
+        
+        # Fully connected layer for classif
+        self.fc = nn.Sequential(nn.Linear(in_features=lstm_dim*2, out_features=hidden_dim),
+                                nn.BatchNorm1d(hidden_dim),
+                                nn.Sigmoid(),
+                                nn.Linear(in_features=hidden_dim, out_features=out_dim),
+                                nn.BatchNorm1d(out_dim),
+                                nn.Softmax(dim=1))
+        
+    # Forward function
+    def forward(self, seq, seq_len):
+        
+        # first pass into embed layer
+        embed = self.embedding(seq)
+        
+        # pack_pad the sequences is a good way to gate relevant information in padded sequences to train a RNN network 
+        pack_padded = nn.utils.rnn.pack_padded_sequence(input=embed,
+                                                        lengths=seq_len,
+                                                        batch_first=True,
+                                                        enforce_sorted=False) 
+        # pass into lstm layer
+        lstm_out, (h_n, c_n) = self.lstm(pack_padded)
+        
+        # concatenate in dimension 1 the outputs of the last lstm layers to get more information
+        h_n = torch.cat((h_n[-2, :, :], h_n[-1, :, :]), dim=1)
+        
+        # pass into fc
+        out = self.fc(h_n)
+        
+        return out
+
+
+    
+
 
