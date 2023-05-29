@@ -19,6 +19,9 @@ cd Protein-Sequence-Classification-using-LSTM-with-Pytorch
 pip install -r requirements.txt
 ```
 
+## Data
+The data I used comes from https://www.uniprot.org/
+
 ## Usage
 
 #### 1 Ensure that you have your protein sequence data in an appropriate format. Each protein sequence should be represented as a character sequence (e.g., "AGTCCGTA..."). If your data is in a different format, you will need to preprocess it before using it with this code.
