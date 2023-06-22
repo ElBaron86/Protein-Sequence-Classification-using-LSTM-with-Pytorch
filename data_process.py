@@ -245,3 +245,19 @@ def get_weigths_for_wsampler(data_list : List[Tuple[int, str]]) -> List[float]:
     weights = [class_weights[label] for label, _ in data_list]
     
     return weights
+
+"""
+Function to get corret weights if you want to use WeightedRandomSampler 
+"""
+def get_weihts_for_cross_entropy(data_list : List[Tuple[int, str]]) -> torch.tensor:
+    from sklearn.utils.class_weight import compute_class_weight
+    """compute class weights for unbalanced datasets
+
+    Returns:
+        list of weights stored in the labels
+    """
+    
+    class_list = [c[0] for c in data_list]
+    class_weights = compute_class_weight(class_weight='balanced', classes =np.unique(class_list),y= class_list)
+    class_weights_dict = {i: w for i, w in enumerate(class_weights)}
+    return torch.FloatTensor( list( class_weights_dict.values() ) )
