@@ -8,13 +8,8 @@ This repository contains Python code for performing protein sequence classificat
 ```Git
 git clone https://github.com/ElBaron86/Protein-Sequence-Classification-using-LSTM-with-Pytorch.git
 ```
-### 3 - Navigate to the project directory:
 
-```Python
-cd Protein-Sequence-Classification-using-LSTM-with-Pytorch
-```
-
-### 4 -Install the necessary dependencies using pip:
+### 3 -Install the necessary dependencies using pip:
 ```Python
 pip install -r requirements.txt
 ```
